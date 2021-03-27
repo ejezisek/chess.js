@@ -151,7 +151,6 @@ var Chess = function(fen) {
   }
 
   var board = new Array(128)
-  var board_pieces = {}
   var kings = { w: EMPTY, b: EMPTY }
   var turn = WHITE
   var castling = { w: 0, b: 0 }
@@ -169,44 +168,6 @@ var Chess = function(fen) {
     load(DEFAULT_POSITION)
   } else {
     load(fen)
-  }
-  const aIdx='a'.charCodeAt(0)
-const ZEROIdx='0'.charCodeAt(0)
-
-  /**
-   * Updates the pieces in the board.
-   * @param {} fen2
-   */
-  function get_board(fen) {
-    if(!fen) {
-      fen=generate_fen()
-    }
-    board_pieces={}
-    var board=board_pieces
-    for(var i=0; i<8; i++) {
-    var row=fen.split(' ')[0].split('/')
-    var currRow=row[i]
-    var columnIdx=0
-    for(var j=0; j<currRow.length; j++) {
-      var currC=currRow.charAt(j)
-      var numb=new Number(currC)
-      if(!isNaN(numb)) {
-        columnIdx+=numb
-        continue;
-      }
-      var character=String.fromCharCode(aIdx+columnIdx)
-      if(!board[currC])
-      board[currC]={}
-      if(typeof board[currC][character] === "undefined") {
-        board[currC][character] = []
-      }
-      board[currC][character].push(i+1)
-      //console.log(character + " " + (i+1) + currC)
-      columnIdx++
-    }
-    }
-    board.fenRep=row
-    return board_pieces
   }
   
   function clear(keep_headers) {
