@@ -1147,6 +1147,7 @@ const ZEROIdx='0'.charCodeAt(0)
         piece_type='p'
       }
     }
+    return piece_type
   }
   function ascii() {
     var s = '   +------------------------+\n'
