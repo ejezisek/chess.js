@@ -588,6 +588,7 @@ const ZEROIdx='0'.charCodeAt(0)
     var piece_type = typeof options !== 'undefined' && 'piece' in options && typeof options.piece === "string"
         ? options.piece.toLowerCase()
         : true
+    // console.log(piece_type)
         /* are we generating moves for a single square? */
     if (typeof options !== 'undefined' && 'square' in options) {
       if (options.square in SQUARES) {
@@ -1085,7 +1086,7 @@ const ZEROIdx='0'.charCodeAt(0)
 
   /* this function is used to uniquely identify ambiguous moves */
   function get_disambiguator(move, sloppy) {
-    var moves = generate_moves({ legal: !sloppy })
+    var moves = generate_moves({ legal: !sloppy, piece: move.piece })
 
     var from = move.from
     var to = move.to
