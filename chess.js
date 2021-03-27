@@ -530,7 +530,6 @@ var Chess = function(fen) {
       }
     }
 
-    // get_board();
     var moves = []
     var us = turn
     var them = swap_color(us)
@@ -549,7 +548,6 @@ var Chess = function(fen) {
     var piece_type = typeof options !== 'undefined' && 'piece' in options && typeof options.piece === "string"
         ? options.piece.toLowerCase()
         : true
-    // console.log(piece_type)
         /* are we generating moves for a single square? */
     if (typeof options !== 'undefined' && 'square' in options) {
       if (options.square in SQUARES) {
@@ -621,7 +619,6 @@ var Chess = function(fen) {
         }
       }
     }
-    // console.log("MOVES" + JSON.stringify(moves) + " " + piece_type)
 
     /* check for castling if: a) we're generating all moves, or b) we're doing
      * single square move generation on the king's square
