@@ -1879,7 +1879,6 @@ var Chess = function(fen) {
 
       return move_history
     },
-    get_board: get_board,
     get_comment: function() {
       return comments[generate_fen()];
     },
