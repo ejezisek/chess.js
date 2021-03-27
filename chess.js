@@ -151,6 +151,7 @@ var Chess = function(fen) {
   }
 
   var board = new Array(128)
+  var board_pieces = {}
   var kings = { w: EMPTY, b: EMPTY }
   var turn = WHITE
   var castling = { w: 0, b: 0 }
@@ -169,7 +170,45 @@ var Chess = function(fen) {
   } else {
     load(fen)
   }
+  const aIdx='a'.charCodeAt(0)
+const ZEROIdx='0'.charCodeAt(0)
 
+  /**
+   * Updates the pieces in the board.
+   * @param {} fen2
+   */
+  function get_board(fen) {
+    if(!fen) {
+      fen=generate_fen()
+    }
+    board_pieces={}
+    var board=board_pieces
+    for(var i=0; i<8; i++) {
+    var row=fen.split(' ')[0].split('/')
+    var currRow=row[i]
+    var columnIdx=0
+    for(var j=0; j<currRow.length; j++) {
+      var currC=currRow.charAt(j)
+      var numb=new Number(currC)
+      if(!isNaN(numb)) {
+        columnIdx+=numb
+        continue;
+      }
+      var character=String.fromCharCode(aIdx+columnIdx)
+      if(!board[currC])
+      board[currC]={}
+      if(typeof board[currC][character] === "undefined") {
+        board[currC][character] = []
+      }
+      board[currC][character].push(i+1)
+      //console.log(character + " " + (i+1) + currC)
+      columnIdx++
+    }
+    }
+    board.fenRep=row
+    return board_pieces
+  }
+  
   function clear(keep_headers) {
     if (typeof keep_headers === 'undefined') {
       keep_headers = false
@@ -530,6 +569,7 @@ var Chess = function(fen) {
       }
     }
 
+    // get_board();
     var moves = []
     var us = turn
     var them = swap_color(us)
@@ -544,11 +584,11 @@ var Chess = function(fen) {
       typeof options !== 'undefined' && 'legal' in options
         ? options.legal
         : true
-      var piece_type = typeof options !== 'undefined' && 'piece' in options && typeof options.piece === "string"
+
+    var piece_type = typeof options !== 'undefined' && 'piece' in options && typeof options.piece === "string"
         ? options.piece.toLowerCase()
         : true
-    
-    /* are we generating moves for a single square? */
+        /* are we generating moves for a single square? */
     if (typeof options !== 'undefined' && 'square' in options) {
       if (options.square in SQUARES) {
         first_sq = last_sq = SQUARES[options.square]
@@ -559,7 +599,9 @@ var Chess = function(fen) {
       }
     }
 
+
     for (var i = first_sq; i <= last_sq; i++) {
+
       /* did we run off the end of the board */
       if (i & 0x88) {
         i += 7
@@ -570,7 +612,6 @@ var Chess = function(fen) {
       if (piece == null || piece.color !== us) {
         continue
       }
-
       if (piece.type === PAWN && (piece_type===true || piece_type===PAWN)) {
         /* single square, non-capturing */
         var square = i + PAWN_OFFSETS[us][0]
@@ -618,6 +659,7 @@ var Chess = function(fen) {
         }
       }
     }
+    // console.log("MOVES" + JSON.stringify(moves) + " " + piece_type)
 
     /* check for castling if: a) we're generating all moves, or b) we're doing
      * single square move generation on the king's square
@@ -1093,7 +1135,19 @@ var Chess = function(fen) {
 
     return ''
   }
-
+  function get_piece_type(clean_move) {
+    var piece_type=clean_move.charAt(0)
+    if(piece_type >='a' && piece_type<='h') {
+      var matches=clean_move.match(
+        /[a-h]\d.*[a-h]\d/ 
+        )
+      if(matches)  {
+        piece_type=undefined
+      } else {
+        piece_type='p'
+      }
+    }
+  }
   function ascii() {
     var s = '   +------------------------+\n'
     for (var i = SQUARES.a8; i <= SQUARES.h1; i++) {
@@ -1141,17 +1195,7 @@ var Chess = function(fen) {
         var promotion = matches[4]
       }
     }
-    var piece_type=clean_move.charAt(0)
-    if(piece_type >='a' && piece_type<='h') {
-      var matches=clean_move.match(
-        /[a-h]\d.*[a-h]\d/ 
-        )
-      if(matches)  {
-        piece_type=undefined
-      } else {
-        piece_type='p'
-      }
-    }
+    var piece_type=get_piece_type(clean_move)
 
     var moves = generate_moves({piece: piece ? piece : piece_type})
     for (var i = 0, len = moves.length; i < len; i++) {
@@ -1875,7 +1919,7 @@ var Chess = function(fen) {
 
       return move_history
     },
-
+    get_board: get_board,
     get_comment: function() {
       return comments[generate_fen()];
     },

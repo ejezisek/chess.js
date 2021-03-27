@@ -1663,6 +1663,24 @@ describe('Regression Tests', function() {
     }
     expect(chess.header()).toEqual(expected);
   })
+  it('should support getting the board', function () {
+    var pgn = [
+      '[Event "Test Olympiad"]',
+      '[Site "Earth"]',
+      '[Date "????.??.??"]',
+      '[Round "6"]',
+      '[White "Testy"]',
+      '[Black "McTest"]',
+      '[Result "*"]',
+      '[FEN "rnbqkb1r/1p3ppp/p2ppn2/6B1/3NP3/2N5/PPP2PPP/R2QKB1R w KQkq - 0 1"]',
+      '[SetUp "1"]',
+      '',
+      '1.Qd2 Be7 *'
+    ];
+
+    var chess = new Chess();
+    console.log(chess.get_board())
+  })
 
   it('Github Issue #129 clear() should clear the board and delete all headers with the exception of SetUp and FEN', function () {
     var pgn = [
