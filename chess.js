@@ -151,7 +151,6 @@ var Chess = function(fen) {
   }
 
   var board = new Array(128)
-  var board_pieces = {}
   var kings = { w: EMPTY, b: EMPTY }
   var turn = WHITE
   var castling = { w: 0, b: 0 }
@@ -169,44 +168,6 @@ var Chess = function(fen) {
     load(DEFAULT_POSITION)
   } else {
     load(fen)
-  }
-  const aIdx='a'.charCodeAt(0)
-const ZEROIdx='0'.charCodeAt(0)
-
-  /**
-   * Updates the pieces in the board.
-   * @param {} fen2
-   */
-  function get_board(fen) {
-    if(!fen) {
-      fen=generate_fen()
-    }
-    board_pieces={}
-    var board=board_pieces
-    for(var i=0; i<8; i++) {
-    var row=fen.split(' ')[0].split('/')
-    var currRow=row[i]
-    var columnIdx=0
-    for(var j=0; j<currRow.length; j++) {
-      var currC=currRow.charAt(j)
-      var numb=new Number(currC)
-      if(!isNaN(numb)) {
-        columnIdx+=numb
-        continue;
-      }
-      var character=String.fromCharCode(aIdx+columnIdx)
-      if(!board[currC])
-      board[currC]={}
-      if(typeof board[currC][character] === "undefined") {
-        board[currC][character] = []
-      }
-      board[currC][character].push(i+1)
-      //console.log(character + " " + (i+1) + currC)
-      columnIdx++
-    }
-    }
-    board.fenRep=row
-    return board_pieces
   }
   
   function clear(keep_headers) {
@@ -569,7 +530,6 @@ const ZEROIdx='0'.charCodeAt(0)
       }
     }
 
-    // get_board();
     var moves = []
     var us = turn
     var them = swap_color(us)
@@ -588,7 +548,7 @@ const ZEROIdx='0'.charCodeAt(0)
     var piece_type = typeof options !== 'undefined' && 'piece' in options && typeof options.piece === "string"
         ? options.piece.toLowerCase()
         : true
-    /* are we generating moves for a single square? */
+        /* are we generating moves for a single square? */
     if (typeof options !== 'undefined' && 'square' in options) {
       if (options.square in SQUARES) {
         first_sq = last_sq = SQUARES[options.square]
@@ -659,7 +619,6 @@ const ZEROIdx='0'.charCodeAt(0)
         }
       }
     }
-    // console.log("MOVES" + JSON.stringify(moves) + " " + piece_type)
 
     /* check for castling if: a) we're generating all moves, or b) we're doing
      * single square move generation on the king's square
@@ -720,46 +679,6 @@ const ZEROIdx='0'.charCodeAt(0)
 
     return legal_moves
   }
-  function move_to_san_fancy(move, moves) {
-    var output = ''
-
-    if (move.flags & BITS.KSIDE_CASTLE) {
-      output = 'O-O'
-    } else if (move.flags & BITS.QSIDE_CASTLE) {
-      output = 'O-O-O'
-    } else {
-
-      if (move.piece !== PAWN) {
-        var disambiguator = get_disambiguator_fancy(move, moves)
-        output += move.piece.toUpperCase() + disambiguator
-      }
-
-      if (move.flags & (BITS.CAPTURE | BITS.EP_CAPTURE)) {
-        if (move.piece === PAWN) {
-          output += algebraic(move.from)[0]
-        }
-        output += 'x'
-      }
-
-      output += algebraic(move.to)
-
-      if (move.flags & BITS.PROMOTION) {
-        output += '=' + move.promotion.toUpperCase()
-      }
-    }
-
-    make_move(move)
-    if (in_check()) {
-      if (in_checkmate()) {
-        output += '#'
-      } else {
-        output += '+'
-      }
-    }
-    undo_move()
-
-    return output
-  }
   /* convert a move from 0x88 coordinates to Standard Algebraic Notation
    * (SAN)
    *
@@ -770,7 +689,7 @@ const ZEROIdx='0'.charCodeAt(0)
    * 4. ... Nge7 is overly disambiguated because the knight on c6 is pinned
    * 4. ... Ne7 is technically the valid SAN
    */
-  function move_to_san(move, sloppy) {
+  function move_to_san(move, moves) {
     var output = ''
 
     if (move.flags & BITS.KSIDE_CASTLE) {
@@ -780,7 +699,7 @@ const ZEROIdx='0'.charCodeAt(0)
     } else {
 
       if (move.piece !== PAWN) {
-        var disambiguator = get_disambiguator(move, sloppy)
+        var disambiguator = get_disambiguator(move, moves)
         output += move.piece.toUpperCase() + disambiguator
       }
 
@@ -810,7 +729,7 @@ const ZEROIdx='0'.charCodeAt(0)
 
     return output
   }
-
+  
   // parses all of the decorators out of a SAN string
   function stripped_san(move) {
     return move.replace(/=/, '').replace(/[+#]?[?!]*$/, '')
@@ -1123,7 +1042,7 @@ const ZEROIdx='0'.charCodeAt(0)
   }
 
   /* this function is used to uniquely identify ambiguous moves */
-    function get_disambiguator_fancy(move, moves) {  
+    function get_disambiguator(move, moves) {  
       var from = move.from
       var to = move.to
       var piece = move.piece
@@ -1173,58 +1092,7 @@ const ZEROIdx='0'.charCodeAt(0)
       return ''
     }
   
-  function get_disambiguator(move, sloppy) {
-    
-    var moves = generate_moves({ legal: !sloppy, piece: move.piece })
 
-    var from = move.from
-    var to = move.to
-    var piece = move.piece
-
-    var ambiguities = 0
-    var same_rank = 0
-    var same_file = 0
-
-    for (var i = 0, len = moves.length; i < len; i++) {
-      var ambig_from = moves[i].from
-      var ambig_to = moves[i].to
-      var ambig_piece = moves[i].piece
-
-      /* if a move of the same piece type ends on the same to square, we'll
-       * need to add a disambiguator to the algebraic notation
-       */
-      if (piece === ambig_piece && from !== ambig_from && to === ambig_to) {
-        ambiguities++
-
-        if (rank(from) === rank(ambig_from)) {
-          same_rank++
-        }
-
-        if (file(from) === file(ambig_from)) {
-          same_file++
-        }
-      }
-    }
-
-    if (ambiguities > 0) {
-      /* if there exists a similar moving piece on the same rank and file as
-       * the move in question, use the square as the disambiguator
-       */
-      if (same_rank > 0 && same_file > 0) {
-        return algebraic(from)
-      } else if (same_file > 0) {
-        /* if the moving piece rests on the same file, use the rank symbol as the
-         * disambiguator
-         */
-        return algebraic(from).charAt(1)
-      } else {
-        /* else use the file symbol */
-        return algebraic(from).charAt(0)
-      }
-    }
-
-    return ''
-  }
   function get_piece_type(clean_move) {
     var piece_type=clean_move.charAt(0)
     if(piece_type >='a' && piece_type<='h') {
@@ -1299,8 +1167,8 @@ const ZEROIdx='0'.charCodeAt(0)
       // try the strict parser first, then the sloppy parser if requested
       // by the user
       if (
-        clean_move === stripped_san(move_to_san_fancy(moves[i], legalMoves)) ||
-        (sloppy && clean_move === stripped_san(move_to_san_fancy(moves[i], illegalMoves)))
+        clean_move === stripped_san(move_to_san(moves[i], legalMoves)) ||
+        (sloppy && clean_move === stripped_san(move_to_san(moves[i], illegalMoves)))
       ) {
         return moves[i]
       } else {
@@ -1347,7 +1215,7 @@ const ZEROIdx='0'.charCodeAt(0)
   /* pretty = external move object */
   function make_pretty(ugly_move) {
     var move = clone(ugly_move)
-    move.san = move_to_san(move, false)
+    move.san = move_to_san(move, generate_moves({legal: true}))
     move.to = algebraic(move.to)
     move.from = algebraic(move.from)
 
@@ -1468,7 +1336,7 @@ const ZEROIdx='0'.charCodeAt(0)
         ) {
           moves.push(make_pretty(ugly_moves[i]))
         } else {
-          moves.push(move_to_san(ugly_moves[i], false))
+          moves.push(move_to_san(ugly_moves[i], generate_moves({legal: true})))
         }
       }
 
@@ -1609,7 +1477,7 @@ const ZEROIdx='0'.charCodeAt(0)
           move_string = move_number + '.'
         }
 
-        move_string = move_string + ' ' + move_to_san(move, false)
+        move_string = move_string + ' ' + move_to_san(move, generate_moves({legal: false}))
         make_move(move)
       }
 
@@ -2009,14 +1877,13 @@ const ZEROIdx='0'.charCodeAt(0)
         if (verbose) {
           move_history.push(make_pretty(move))
         } else {
-          move_history.push(move_to_san(move))
+          move_history.push(move_to_san(move, generate_moves({legal: true})))
         }
         make_move(move)
       }
 
       return move_history
     },
-    get_board: get_board,
     get_comment: function() {
       return comments[generate_fen()];
     },
