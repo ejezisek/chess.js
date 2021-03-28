@@ -552,7 +552,7 @@ const ZEROIdx='0'.charCodeAt(0)
     }
     return move
   }
-
+  bnum=0
   function generate_moves(options) {
     function add_move(board, moves, from, to, flags) {
       /* if pawn promotion */
@@ -588,8 +588,7 @@ const ZEROIdx='0'.charCodeAt(0)
     var piece_type = typeof options !== 'undefined' && 'piece' in options && typeof options.piece === "string"
         ? options.piece.toLowerCase()
         : true
-    // console.log(piece_type)
-        /* are we generating moves for a single square? */
+    /* are we generating moves for a single square? */
     if (typeof options !== 'undefined' && 'square' in options) {
       if (options.square in SQUARES) {
         first_sq = last_sq = SQUARES[options.square]
@@ -721,7 +720,46 @@ const ZEROIdx='0'.charCodeAt(0)
 
     return legal_moves
   }
+  function move_to_san_fancy(move, moves) {
+    var output = ''
 
+    if (move.flags & BITS.KSIDE_CASTLE) {
+      output = 'O-O'
+    } else if (move.flags & BITS.QSIDE_CASTLE) {
+      output = 'O-O-O'
+    } else {
+
+      if (move.piece !== PAWN) {
+        var disambiguator = get_disambiguator_fancy(move, moves)
+        output += move.piece.toUpperCase() + disambiguator
+      }
+
+      if (move.flags & (BITS.CAPTURE | BITS.EP_CAPTURE)) {
+        if (move.piece === PAWN) {
+          output += algebraic(move.from)[0]
+        }
+        output += 'x'
+      }
+
+      output += algebraic(move.to)
+
+      if (move.flags & BITS.PROMOTION) {
+        output += '=' + move.promotion.toUpperCase()
+      }
+    }
+
+    make_move(move)
+    if (in_check()) {
+      if (in_checkmate()) {
+        output += '#'
+      } else {
+        output += '+'
+      }
+    }
+    undo_move()
+
+    return output
+  }
   /* convert a move from 0x88 coordinates to Standard Algebraic Notation
    * (SAN)
    *
@@ -740,9 +778,9 @@ const ZEROIdx='0'.charCodeAt(0)
     } else if (move.flags & BITS.QSIDE_CASTLE) {
       output = 'O-O-O'
     } else {
-      var disambiguator = get_disambiguator(move, sloppy)
 
       if (move.piece !== PAWN) {
+        var disambiguator = get_disambiguator(move, sloppy)
         output += move.piece.toUpperCase() + disambiguator
       }
 
@@ -1085,7 +1123,58 @@ const ZEROIdx='0'.charCodeAt(0)
   }
 
   /* this function is used to uniquely identify ambiguous moves */
+    function get_disambiguator_fancy(move, moves) {  
+      var from = move.from
+      var to = move.to
+      var piece = move.piece
+  
+      var ambiguities = 0
+      var same_rank = 0
+      var same_file = 0
+  
+      for (var i = 0, len = moves.length; i < len; i++) {
+        var ambig_from = moves[i].from
+        var ambig_to = moves[i].to
+        var ambig_piece = moves[i].piece
+  
+        /* if a move of the same piece type ends on the same to square, we'll
+         * need to add a disambiguator to the algebraic notation
+         */
+        if (piece === ambig_piece && from !== ambig_from && to === ambig_to) {
+          ambiguities++
+  
+          if (rank(from) === rank(ambig_from)) {
+            same_rank++
+          }
+  
+          if (file(from) === file(ambig_from)) {
+            same_file++
+          }
+        }
+      }
+  
+      if (ambiguities > 0) {
+        /* if there exists a similar moving piece on the same rank and file as
+         * the move in question, use the square as the disambiguator
+         */
+        if (same_rank > 0 && same_file > 0) {
+          return algebraic(from)
+        } else if (same_file > 0) {
+          /* if the moving piece rests on the same file, use the rank symbol as the
+           * disambiguator
+           */
+          return algebraic(from).charAt(1)
+        } else {
+          /* else use the file symbol */
+          return algebraic(from).charAt(0)
+        }
+      }
+  
+      return ''
+    }
+  
   function get_disambiguator(move, sloppy) {
+    
     var moves = generate_moves({ legal: !sloppy, piece: move.piece })
 
     var from = move.from
@@ -1198,14 +1287,20 @@ const ZEROIdx='0'.charCodeAt(0)
       }
     }
     var piece_type=get_piece_type(clean_move)
+    var moves=null;
+    var legalMoves = generate_moves({legal: true, piece: piece ? piece : piece_type})
+    moves=legalMoves
+    if(sloppy) {
+      var illegalMoves = generate_moves({legal: false, piece: piece ? piece : piece_type})
+      moves=illegalMoves
+    } 
 
-    var moves = generate_moves({piece: piece ? piece : piece_type})
     for (var i = 0, len = moves.length; i < len; i++) {
       // try the strict parser first, then the sloppy parser if requested
       // by the user
       if (
-        clean_move === stripped_san(move_to_san(moves[i])) ||
-        (sloppy && clean_move === stripped_san(move_to_san(moves[i], true)))
+        clean_move === stripped_san(move_to_san_fancy(moves[i], legalMoves)) ||
+        (sloppy && clean_move === stripped_san(move_to_san_fancy(moves[i], illegalMoves)))
       ) {
         return moves[i]
       } else {
