@@ -513,7 +513,7 @@ var Chess = function(fen) {
     }
     return move
   }
-  bnum=0
+
   function generate_moves(options) {
     function add_move(board, moves, from, to, flags) {
       /* if pawn promotion */
@@ -548,7 +548,8 @@ var Chess = function(fen) {
     var piece_type = typeof options !== 'undefined' && 'piece' in options && typeof options.piece === "string"
         ? options.piece.toLowerCase()
         : true
-        /* are we generating moves for a single square? */
+
+    /* are we generating moves for a single square? */
     if (typeof options !== 'undefined' && 'square' in options) {
       if (options.square in SQUARES) {
         first_sq = last_sq = SQUARES[options.square]
@@ -559,9 +560,7 @@ var Chess = function(fen) {
       }
     }
 
-
     for (var i = first_sq; i <= last_sq; i++) {
-
       /* did we run off the end of the board */
       if (i & 0x88) {
         i += 7
@@ -572,6 +571,7 @@ var Chess = function(fen) {
       if (piece == null || piece.color !== us) {
         continue
       }
+
       if (piece.type === PAWN && (piece_type===true || piece_type===PAWN)) {
         /* single square, non-capturing */
         var square = i + PAWN_OFFSETS[us][0]
@@ -679,6 +679,7 @@ var Chess = function(fen) {
 
     return legal_moves
   }
+
   /* convert a move from 0x88 coordinates to Standard Algebraic Notation
    * (SAN)
    *
@@ -729,7 +730,6 @@ var Chess = function(fen) {
 
     return output
   }
-  
   // parses all of the decorators out of a SAN string
   function stripped_san(move) {
     return move.replace(/=/, '').replace(/[+#]?[?!]*$/, '')
