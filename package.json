@@ -7,13 +7,20 @@
   "keywords": [
     "chess"
   ],
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run format"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/jhlywa/chess.js.git"
   },
   "devDependencies": {
+    "husky": "^6.0.0",
     "jest": "^26.6.3",
-    "prettier": "^2.2.1"
+    "prettier": "^2.2.1",
+    "pretty-quick": "^3.1.0"
   },
   "scripts": {
     "test": "jest",
