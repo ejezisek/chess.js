@@ -19,5 +19,8 @@
     "prepare": "husky install",
     "test": "jest",
     "format": "prettier --write chess.js"
+  },
+  "dependencies": {
+    "husky": "^6.0.0"
   }
 }
