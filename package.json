@@ -16,6 +16,7 @@
     "prettier": "^2.2.1"
   },
   "scripts": {
+    "prepare": "husky install",
     "test": "jest",
     "format": "prettier --write chess.js"
   }
